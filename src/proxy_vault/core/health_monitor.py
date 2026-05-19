@@ -1,6 +1,7 @@
 import asyncio
+import time
 from proxy_vault.providers.free_pool import FreeProxyPool
-from proxy_vault.models import ProxyEntry
+from proxy_vault.models import ProxyEntry, ProxyStatus
 from proxy_vault.config import config
 
 
@@ -9,6 +10,8 @@ class HealthMonitor:
         self._pool = pool
         self._interval = check_interval or config.get("free_pool.health_check_interval", 60)
         self._running = False
+        self._checks_done: int = 0
+        self._checks_passed: int = 0
 
     @property
     def is_running(self) -> bool:
@@ -24,20 +27,26 @@ class HealthMonitor:
         proxies = list(self._pool._proxies.values())
         if not proxies:
             return
-        semaphore = asyncio.Semaphore(50)
+        # Only check up to 200 proxies per cycle, prioritize unchecked ones
+        to_check = [p for p in proxies if p.latency_ms == 0][:50] or proxies[:50]
+        semaphore = asyncio.Semaphore(20)
         async def check_one(p: ProxyEntry):
             async with semaphore:
+                t0 = time.monotonic()
                 try:
                     _, writer = await asyncio.wait_for(
                         asyncio.open_connection(p.host, p.port),
                         timeout=5,
                     )
+                    elapsed = int((time.monotonic() - t0) * 1000)
                     writer.close()
                     await writer.wait_closed()
-                    self._pool.mark_success(p.key, latency=0)
+                    self._pool.mark_success(p.key, latency=elapsed)
+                    self._checks_passed += 1
                 except Exception:
                     self._pool.mark_failure(p.key)
-        await asyncio.gather(*[check_one(p) for p in proxies])
+                self._checks_done += 1
+        await asyncio.gather(*[check_one(p) for p in to_check])
 
     async def check_single(self, proxy: ProxyEntry) -> bool:
         try:

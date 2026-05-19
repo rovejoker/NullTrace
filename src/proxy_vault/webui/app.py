@@ -28,10 +28,16 @@ async def dashboard(request: Request):
 
 @app.get("/controls")
 async def controls(request: Request):
-    state = get_manager().state
+    m = get_manager()
+    state = m.state
+    stats = m.get_stats()
     if not _is_htmx(request):
         return templates.TemplateResponse(request=request, name="index.html")
-    return templates.TemplateResponse(request=request, name="controls.html", context={"state": state})
+    return templates.TemplateResponse(request=request, name="controls.html", context={
+        "state": state,
+        "running": stats.get("running", False),
+        "provider": stats.get("provider", ""),
+    })
 
 
 @app.get("/config")

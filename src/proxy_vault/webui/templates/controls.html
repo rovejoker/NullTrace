@@ -1,7 +1,11 @@
 <h2>Proxy Controls</h2>
 
 <div id="ctl-status" hx-get="/api/status" hx-trigger="every 5s" style="margin-bottom:15px;">
+    {% if running %}
+    <span class="tag tag-active">RUNNING ({{ provider }})</span>
+    {% else %}
     <span class="tag">STOPPED</span>
+    {% endif %}
 </div>
 
 <div class="card">
