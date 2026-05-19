@@ -78,7 +78,7 @@ def test_mark_failure_increases_consecutive(pool):
 
 def test_mark_failure_triggers_unstable(pool):
     p = make_proxy("1.1.1.1", 80, status=ProxyStatus.ACTIVE, score=60)
-    p.consecutive_fails = 2
+    p.consecutive_fails = 3
     pool.add(p)
     pool._check_thresholds(pool._proxies["1.1.1.1:80"])
     assert pool._proxies["1.1.1.1:80"].status == ProxyStatus.UNSTABLE

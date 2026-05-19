@@ -13,7 +13,7 @@ free_pool:
   health_check_interval: 60
   request_timeout: 10
   max_retries: 3
-  unstable_threshold: 2
+  unstable_threshold: 3
   banned_threshold: 5
   cooldown_minutes: 30
   validate_concurrency: 50
