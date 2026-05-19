@@ -11,25 +11,25 @@ app.include_router(api_router)
 
 @app.get("/")
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 
 @app.get("/dashboard")
 async def dashboard(request: Request):
     stats = get_manager().get_stats()
-    return templates.TemplateResponse("dashboard.html", {"request": request, **stats})
+    return templates.TemplateResponse(request=request, name="dashboard.html", context=stats)
 
 
 @app.get("/controls")
 async def controls(request: Request):
     state = get_manager().state
-    return templates.TemplateResponse("controls.html", {"request": request, "state": state})
+    return templates.TemplateResponse(request=request, name="controls.html", context={"state": state})
 
 
 @app.get("/config")
 async def config_page(request: Request):
     from proxy_vault.config import config as cfg
-    return templates.TemplateResponse("config.html", {"request": request, "config": cfg.data})
+    return templates.TemplateResponse(request=request, name="config.html", context={"config": cfg.data})
 
 
 async def start_webui(port: int = 8080):
