@@ -22,6 +22,9 @@ class FreeProxyPool:
             if len(existing.sources) >= 2:
                 existing.score = min(100, existing.score + 20)
             return False
+        max_size = config.get("free_pool.max_pool_size", 200)
+        if len(self._proxies) >= max_size:
+            return False
         if proxy.anonymity == AnonymityLevel.TRANSPARENT:
             return False
         source_count = len(proxy.sources)
@@ -33,6 +36,7 @@ class FreeProxyPool:
             proxy.score = min(100, proxy.score + 15)
         elif proxy.latency_ms > 0 and proxy.latency_ms < 3000:
             proxy.score = min(100, proxy.score + 5)
+        proxy.status = ProxyStatus.ACTIVE
         proxy.created_at = datetime.now()
         self._proxies[key] = proxy
         return True

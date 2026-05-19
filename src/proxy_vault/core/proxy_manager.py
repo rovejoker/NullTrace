@@ -79,7 +79,6 @@ class ProxyManager:
                     is_new = self._pool.add(p)
                     if is_new:
                         self._total_collected += 1
-                        asyncio.create_task(self._validate_and_activate(p))
                 min_size = config.get("free_pool.min_pool_size", 10)
                 if self._pool.size < min_size:
                     await self._emergency_collect()
