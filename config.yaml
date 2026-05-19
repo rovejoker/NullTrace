@@ -1,0 +1,36 @@
+proxy:
+  host: "127.0.0.1"
+  port: 1080
+
+defaults:
+  provider: free
+  mode: pool
+  hops: 1
+
+free_pool:
+  min_pool_size: 10
+  max_pool_size: 200
+  health_check_interval: 60
+  request_timeout: 10
+  max_retries: 3
+  unstable_threshold: 3
+  banned_threshold: 5
+  cooldown_minutes: 30
+  validate_concurrency: 50
+  collect_interval_min: 5
+  collect_interval_max: 10
+
+tor:
+  host: "127.0.0.1"
+  port: 9050
+
+paid:
+  api_key: ""
+  api_endpoint: ""
+
+self_relay:
+  nodes_file: "nodes.json"
+
+webui:
+  host: "127.0.0.1"
+  port: 8080
