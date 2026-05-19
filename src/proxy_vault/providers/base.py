@@ -1,5 +1,5 @@
+import asyncio
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator
 from proxy_vault.models import ProxyEntry
 
 
@@ -20,7 +20,6 @@ class BaseProvider(ABC):
 
     async def validate(self, proxy: ProxyEntry) -> bool:
         """Validate a single proxy is reachable. Base: TCP connect check."""
-        import asyncio
         try:
             _, writer = await asyncio.wait_for(
                 asyncio.open_connection(proxy.host, proxy.port),

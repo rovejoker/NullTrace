@@ -1,0 +1,145 @@
+<h2>免费代理来源 &amp; 动态更新机制</h2>
+<p class="subtitle">多源聚合 + 持续采集 + 交叉验证</p>
+
+<div class="section">
+  <h3>多源聚合架构</h3>
+  <div class="mockup">
+    <div class="mockup-header">内置免费代理采集源（可扩展）</div>
+    <div class="mockup-body" style="padding:12px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:13px;">
+
+        <div style="background:#1a1a2e; padding:12px; border-radius:8px; border-left:3px solid #e94560;">
+          <strong style="color:#e94560;">HTTP/HTTPS 列表源</strong>
+          <ul style="margin:8px 0 0 16px; color:#ccc; line-height:1.8;">
+            <li>proxyscrape.com/api</li>
+            <li>free-proxy-list.net</li>
+            <li>proxy-list.download</li>
+            <li>proxylist.geonode.com</li>
+            <li>spys.one/en/</li>
+          </ul>
+        </div>
+
+        <div style="background:#1a1a2e; padding:12px; border-radius:8px; border-left:3px solid #f77f00;">
+          <strong style="color:#f77f00;">SOCKS5 列表源</strong>
+          <ul style="margin:8px 0 0 16px; color:#ccc; line-height:1.8;">
+            <li>socks-proxy.net</li>
+            <li>proxyscrape.com/socks5</li>
+            <li>openproxy.space/list/socks5</li>
+            <li>hidemy.name/en/proxy-list</li>
+          </ul>
+        </div>
+
+        <div style="background:#1a1a2e; padding:12px; border-radius:8px; border-left:3px solid #2d6a4f;">
+          <strong style="color:#2d6a4f;">GitHub 仓库源</strong>
+          <ul style="margin:8px 0 0 16px; color:#ccc; line-height:1.8;">
+            <li>TheSpeedX/PROXY-List</li>
+            <li>monosans/proxy-list</li>
+            <li>jetkai/proxy-list</li>
+            <li>roosterkid/openproxylist</li>
+          </ul>
+        </div>
+
+        <div style="background:#1a1a2e; padding:12px; border-radius:8px; border-left:3px solid #0077b6;">
+          <strong style="color:#0077b6;">聚合 API 源</strong>
+          <ul style="margin:8px 0 0 16px; color:#ccc; line-height:1.8;">
+            <li>proxylist.geonode.com/api</li>
+            <li>api.proxyscrape.com/v2</li>
+            <li>api.openproxylist.xyz</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>采集 + 验证流水线</h3>
+  <div class="mockup">
+    <div class="mockup-header">持续运行的采集验证引擎</div>
+    <div class="mockup-body" style="font-family:monospace; font-size:12px; line-height:2; padding:12px;">
+      <div style="background:#1a1a2e; padding:16px; border-radius:8px;">
+
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+          <div style="background:#0077b6; color:white; padding:6px 12px; border-radius:4px; white-space:nowrap;">定时爬取<br><small>每 5-10min</small></div>
+          <span>→</span>
+          <div style="background:#533483; color:white; padding:6px 12px; border-radius:4px; white-space:nowrap;">去重合并<br><small>ip:port 去重</small></div>
+          <span>→</span>
+          <div style="background:#f77f00; color:white; padding:6px 12px; border-radius:4px; white-space:nowrap;">并发验证<br><small>50 并发</small></div>
+          <span>→</span>
+          <div style="background:#2d6a4f; color:white; padding:6px 12px; border-radius:4px; white-space:nowrap;">入库评分<br><small>加权排序</small></div>
+          <span>→</span>
+          <div style="background:#e94560; color:white; padding:6px 12px; border-radius:4px; white-space:nowrap;">可用池<br><small>即取即用</small></div>
+        </div>
+
+        <hr style="border-color:#333; margin:12px 0;">
+
+        <div style="color:#fcbf49;">✦ 交叉验证加权 —— 同一 IP 出现在多个源 → 初始分 +20</div>
+        <div style="color:#fcbf49;">✦ 时效性加权 —— 最近 30 分钟内采集到的 IP → 初始分 +10</div>
+        <div style="color:#fcbf49;">✦ 速度加权 —— 响应时间 &lt; 1s +15分，1-3s +5分，> 3s +0分</div>
+        <div style="color:#fcbf49;">✦ 匿名度过滤 —— 透明代理(transparent) 直接丢弃，只保留匿名和高匿</div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>动态更新策略</h3>
+  <div class="mockup">
+    <div class="mockup-header">三层触发机制确保 IP 池始终饱满</div>
+    <div class="mockup-body">
+      <table style="width:100%; border-collapse:collapse;">
+        <tr style="background:#1a1a2e; color:white;">
+          <th style="padding:10px; text-align:left;">触发机制</th>
+          <th style="padding:10px; text-align:left;">条件</th>
+          <th style="padding:10px; text-align:left;">行为</th>
+        </tr>
+        <tr>
+          <td style="padding:10px;"><strong style="color:#2d6a4f;">🕐 定时刷新</strong></td>
+          <td style="padding:10px;">每 5-10 分钟（可配置）</td>
+          <td style="padding:10px;">从所有源拉取最新列表，增量更新</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;"><strong style="color:#f77f00;">⚠️ 阈值触发</strong></td>
+          <td style="padding:10px;">可用 IP 降至最低线以下</td>
+          <td style="padding:10px;">立即全量采集 + 降低验证标准临时补充</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;"><strong style="color:#e94560;">🔴 紧急补充</strong></td>
+          <td style="padding:10px;">可用 IP 归零</td>
+          <td style="padding:10px;">跳过验证直接入库（标注 untrusted），边用边验</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;"><strong style="color:#0077b6;">👤 手动注入</strong></td>
+          <td style="padding:10px;">用户通过 CLI/WebUI 添加</td>
+          <td style="padding:10px;">直接插入验证流水线，优先级最高</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>采集器插件接口</h3>
+  <div class="mockup">
+    <div class="mockup-header">每个采集源实现统一接口，可自行扩展</div>
+    <div class="mockup-body">
+      <pre style="background:#0d1117; color:#c9d1d9; padding:16px; border-radius:8px; font-size:13px; overflow-x:auto;">
+<span style="color:#ff7b72;">class</span> <span style="color:#d2a8ff;">BaseCollector</span>(<span style="color:#ffa657;">ABC</span>):
+    <span style="color:#8b949e;">"""采集器基类 — 实现此接口即可接入自定义源"""</span>
+
+    <span style="color:#ff7b72;">@property</span>
+    <span style="color:#ff7b72;">def</span> <span style="color:#d2a8ff;">name</span>(<span style="color:#ffa657;">self</span>) -> <span style="color:#79c0ff;">str</span>: ...
+
+    <span style="color:#ff7b72;">@property</span>
+    <span style="color:#ff7b72;">def</span> <span style="color:#d2a8ff;">interval</span>(<span style="color:#ffa657;">self</span>) -> <span style="color:#79c0ff;">int</span>:  <span style="color:#8b949e;"># 采集间隔(秒)</span>
+
+    <span style="color:#ff7b72;">async def</span> <span style="color:#d2a8ff;">collect</span>(<span style="color:#ffa657;">self</span>) -> <span style="color:#79c0ff;">list</span>[<span style="color:#a5d6ff;">ProxyEntry</span>]:
+        <span style="color:#8b949e;">"""返回采集到的代理列表"""</span>
+
+    <span style="color:#ff7b72;">async def</span> <span style="color:#d2a8ff;">validate</span>(<span style="color:#ffa657;">self</span>, proxy: <span style="color:#a5d6ff;">ProxyEntry</span>) -> <span style="color:#79c0ff;">bool</span>:
+        <span style="color:#8b949e;">"""验证单个代理是否可用（可选覆盖）"""</span></pre>
+    </div>
+  </div>
+</div>

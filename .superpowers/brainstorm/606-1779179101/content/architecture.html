@@ -1,0 +1,95 @@
+<h2>Proxy Vault — 系统架构</h2>
+<p class="subtitle">IP 隐藏代理工具整体架构</p>
+
+<div class="section">
+  <h3>核心架构分层</h3>
+  <div class="mockup">
+    <div class="mockup-header">四层架构</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.8;">
+      <div style="background:#1a1a2e; padding:16px; border-radius:8px;">
+        <div style="color:#e94560; margin-bottom:8px;">┌─────────────────────────────────────────────┐</div>
+        <div style="color:#e94560;">│  🖥️  Interface Layer (接口层)               │</div>
+        <div style="color:#e94560;">│  CLI (click)  +  Web UI (Flask/FastAPI)     │</div>
+        <div style="color:#e94560; margin-bottom:8px;">└─────────────────────────────────────────────┘</div>
+        <div style="color:#0f3460; margin:4px 0;">        │                        │</div>
+        <div style="color:#16213e; margin-bottom:8px;">┌─────────────────────────────────────────────┐</div>
+        <div style="color:#16213e;">│  🧠 Core Engine (核心引擎)                  │</div>
+        <div style="color:#16213e;">│  ProxyManager / RelayChain / IPRotator      │</div>
+        <div style="color:#16213e; margin-bottom:8px;">└─────────────────────────────────────────────┘</div>
+        <div style="color:#0f3460; margin:4px 0;">        │                        │</div>
+        <div style="color:#533483; margin-bottom:8px;">┌─────────────────────────────────────────────┐</div>
+        <div style="color:#533483;">│  🔌 Provider Layer (代理源)                 │</div>
+        <div style="color:#533483;">│  FreePool │ PaidAPI │ SelfRelay │ Custom    │</div>
+        <div style="color:#533483; margin-bottom:8px;">└─────────────────────────────────────────────┘</div>
+        <div style="color:#0f3460; margin:4px 0;">        │                        │</div>
+        <div style="color:#2d6a4f; margin-bottom:8px;">┌─────────────────────────────────────────────┐</div>
+        <div style="color:#2d6a4f;">│  🌐 Proxy Protocol Layer (代理协议)         │</div>
+        <div style="color:#2d6a4f;">│  HTTP Proxy  │  SOCKS5 Server               │</div>
+        <div style="color:#2d6a4f;">└─────────────────────────────────────────────┘</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>数据流示意</h3>
+  <div class="mockup">
+    <div class="mockup-header">请求流转路径</div>
+    <div class="mockup-body" style="text-align: center; padding: 20px;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+        <div style="background:#e94560; color:white; padding:10px 16px; border-radius:8px;">安全工具<br><small>nmap/sqlmap</small></div>
+        <span style="font-size:20px;">→</span>
+        <div style="background:#16213e; color:white; padding:10px 16px; border-radius:8px;">本地代理<br><small>127.0.0.1:1080</small></div>
+        <span style="font-size:20px;">→</span>
+        <div style="background:#533483; color:white; padding:10px 16px; border-radius:8px;">IP 选择<br><small>单IP / 池轮换</small></div>
+        <span style="font-size:20px;">→</span>
+        <div style="background:#0f3460; color:white; padding:10px 16px; border-radius:8px;">
+          中继链路<br><small>可选 1-5 跳</small>
+        </div>
+        <span style="font-size:20px;">→</span>
+        <div style="background:#2d6a4f; color:white; padding:10px 16px; border-radius:8px;">目标<br><small>target.com</small></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>模块组成</h3>
+  <table style="width:100%; border-collapse: collapse;">
+    <tr style="background:#1a1a2e; color:white;">
+      <th style="padding:10px; text-align:left;">模块</th>
+      <th style="padding:10px; text-align:left;">职责</th>
+      <th style="padding:10px; text-align:left;">关键技术</th>
+    </tr>
+    <tr style="border-bottom:1px solid #333;">
+      <td style="padding:10px;"><code>proxy-server</code></td>
+      <td style="padding:10px;">本地 HTTP/SOCKS5 代理服务</td>
+      <td style="padding:10px;">asyncio, aiohttp, python-socks</td>
+    </tr>
+    <tr style="border-bottom:1px solid #333;">
+      <td style="padding:10px;"><code>relay-chain</code></td>
+      <td style="padding:10px;">多跳中继链路管理</td>
+      <td style="padding:10px;">嵌套 SOCKS5 转发</td>
+    </tr>
+    <tr style="border-bottom:1px solid #333;">
+      <td style="padding:10px;"><code>ip-pool</code></td>
+      <td style="padding:10px;">IP 池管理与轮换策略</td>
+      <td style="padding:10px;">定时健康检查、加权选择</td>
+    </tr>
+    <tr style="border-bottom:1px solid #333;">
+      <td style="padding:10px;"><code>providers</code></td>
+      <td style="padding:10px;">代理源适配器</td>
+      <td style="padding:10px;">插件式加载、统一接口</td>
+    </tr>
+    <tr style="border-bottom:1px solid #333;">
+      <td style="padding:10px;"><code>cli</code></td>
+      <td style="padding:10px;">命令行控制</td>
+      <td style="padding:10px;">click</td>
+    </tr>
+    <tr>
+      <td style="padding:10px;"><code>webui</code></td>
+      <td style="padding:10px;">Web 管理控制台</td>
+      <td style="padding:10px;">FastAPI + 原生 HTML/JS</td>
+    </tr>
+  </table>
+</div>

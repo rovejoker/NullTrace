@@ -1,0 +1,132 @@
+<h2>Tor 网络集成 —— 补强免费代理隐匿性</h2>
+<p class="subtitle">Tor 作为独立的"匿名层"，可与任意代理源组合</p>
+
+<div class="section">
+  <h3>核心思路：Tor 不是代理源，而是匿名转发层</h3>
+  <div class="mockup">
+    <div class="mockup-header">三种 Tor 使用模式</div>
+    <div class="mockup-body">
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; font-size:13px;">
+
+        <div style="background:#1a1a2e; padding:14px; border-radius:8px; border-top:3px solid #e94560;">
+          <strong style="color:#e94560;">模式 A：纯 Tor</strong>
+          <p style="color:#ccc; margin:8px 0; line-height:1.6;">
+            所有流量 → 本地 Tor SOCKS5<br>
+            → Tor 网络 (3跳) → 目标
+          </p>
+          <div style="color:#888; font-size:11px; margin-top:8px;">
+            ✓ 隐匿性最强<br>
+            ✓ 零成本<br>
+            ✗ 速度慢 (100-500ms)<br>
+            ✗ Tor 出口节点可能被目标封禁
+          </div>
+        </div>
+
+        <div style="background:#1a1a2e; padding:14px; border-radius:8px; border-top:3px solid #f77f00;">
+          <strong style="color:#f77f00;">模式 B：免费代理 → Tor</strong>
+          <p style="color:#ccc; margin:8px 0; line-height:1.6;">
+            流量 → 免费代理(1跳)<br>
+            → Tor 网络 (3跳) → 目标
+          </p>
+          <div style="color:#888; font-size:11px; margin-top:8px;">
+            ✓ 免费代理看不到你的目标<br>
+            ✓ 目标看到的是 Tor 出口 IP<br>
+            ✓ 双重隐匿<br>
+            ✗ 延迟叠加 (200ms + 300ms)
+          </div>
+        </div>
+
+        <div style="background:#1a1a2e; padding:14px; border-radius:8px; border-top:3px solid #2d6a4f;">
+          <strong style="color:#2d6a4f;">模式 C：Tor → 付费代理</strong>
+          <p style="color:#ccc; margin:8px 0; line-height:1.6;">
+            流量 → Tor 网络 (3跳)<br>
+            → 付费住宅代理 → 目标
+          </p>
+          <div style="color:#888; font-size:11px; margin-top:8px;">
+            ✓ 目标看到的是住宅 IP<br>
+            ✓ 住宅 IP 不易被封<br>
+            ✓ ISP 看不到你在用代理<br>
+            ✗ 成本最高、延迟最高
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>架构变更：Tor 作为 Relay 层</h3>
+  <div class="mockup">
+    <div class="mockup-header">更新后的提供商层</div>
+    <div class="mockup-body" style="font-family:monospace; font-size:12px; line-height:2;">
+      <div style="background:#1a1a2e; padding:16px; border-radius:8px;">
+
+        <div style="color:#888; margin-bottom:8px;"># 代理源（Entry / Exit）</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+          <div style="background:#e94560; color:white; padding:6px 12px; border-radius:4px;">FreePool</div>
+          <div style="background:#f77f00; color:white; padding:6px 12px; border-radius:4px;">PaidAPI</div>
+          <div style="background:#2d6a4f; color:white; padding:6px 12px; border-radius:4px;">SelfRelay</div>
+          <div style="background:#0077b6; color:white; padding:6px 12px; border-radius:4px;">Custom</div>
+        </div>
+
+        <div style="color:#888; margin-bottom:8px;"># 匿名层（可插入链路中任意位置）</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <div style="background:#533483; color:white; padding:8px 16px; border-radius:4px; border:2px dashed #7b2ff7;">
+            🧅 Tor 网络层<br><small>本地 Tor → 3跳 → 出口</small>
+          </div>
+          <div style="background:#1a1a2e; color:#888; padding:8px 16px; border-radius:4px; border:1px dashed #555;">
+            🔮 I2P 层 (规划)<br><small>预留接口</small>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>链路配置示例</h3>
+  <div class="mockup">
+    <div class="mockup-header">用户可自由编排链路</div>
+    <div class="mockup-body">
+      <pre style="background:#0d1117; color:#c9d1d9; padding:16px; border-radius:8px; font-size:13px;">
+<span style="color:#8b949e;"># 纯 Tor 模式</span>
+<span style="color:#d2a8ff;">proxy start</span> --provider tor
+
+<span style="color:#8b949e;"># 免费代理 → Tor → 目标（推荐：免费代理隐匿增强）</span>
+<span style="color:#d2a8ff;">proxy start</span> --provider free --relay tor
+
+<span style="color:#8b949e;"># Tor → 付费代理 → 目标（推荐：出口用住宅IP不被封）</span>
+<span style="color:#d2a8ff;">proxy start</span> --provider paid --api-key xxx --entry tor
+
+<span style="color:#8b949e;"># 自定义链路：免费代理 → Tor → 自建中继 → 目标</span>
+<span style="color:#d2a8ff;">proxy start</span> --chain free,tor,self-relay
+
+<span style="color:#8b949e;"># 纯免费单跳（不需要 Tor）</span>
+<span style="color:#d2a8ff;">proxy start</span> --provider free --hops 1
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>系统要求</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <div style="background:#1a1a2e; padding:14px; border-radius:8px; color:#ccc; line-height:1.8;">
+        <p><strong style="color:#533483;">🧅 Tor 模式需要本地运行 Tor 服务</strong></p>
+        <p>本工具不内置 Tor，而是连接到本地已安装的 Tor 守护进程：</p>
+        <ul style="margin:8px 0 0 20px;">
+          <li>Linux: <code>apt install tor && systemctl start tor</code> → 默认 <code>127.0.0.1:9050</code></li>
+          <li>macOS: <code>brew install tor && brew services start tor</code></li>
+          <li>Windows: Tor Expert Bundle 或 Tor Browser 自带的 <code>tor.exe</code></li>
+        </ul>
+        <p style="margin-top:12px; color:#888; font-size:12px;">
+          启动时自动检测本地 Tor 端口是否可用，不可用时给出安装指引。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

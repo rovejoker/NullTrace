@@ -1,0 +1,125 @@
+<h2>Proxy Vault — 最终设计总览</h2>
+<p class="subtitle">IP 隐藏代理工具完整设计</p>
+
+<div class="section">
+  <h3>项目概览</h3>
+  <table style="width:100%; border-collapse:collapse;">
+    <tr style="background:#1a1a2e; color:white;">
+      <th style="padding:10px; text-align:left; width:180px;">维度</th>
+      <th style="padding:10px; text-align:left;">决定</th>
+    </tr>
+    <tr><td style="padding:8px; color:#e94560;">代理协议</td><td style="padding:8px;">HTTP/HTTPS + SOCKS5</td></tr>
+    <tr><td style="padding:8px; color:#e94560;">IP 来源</td><td style="padding:8px;">混合模式：免费池 / 付费API / 自建中继 / Tor — 全部可插拔</td></tr>
+    <tr><td style="padding:8px; color:#e94560;">CLI 模式</td><td style="padding:8px;">守护进程，本地端口代理 (127.0.0.1:1080)</td></tr>
+    <tr><td style="padding:8px; color:#e94560;">Web UI</td><td style="padding:8px;">管理控制台：监控 + 切换模式 + 换IP + 配置 + 启停</td></tr>
+    <tr><td style="padding:8px; color:#e94560;">中继跳数</td><td style="padding:8px;">免费=1跳 / 付费=1-2跳 / 自建=2-5跳 / Tor=内置3跳</td></tr>
+    <tr><td style="padding:8px; color:#e94560;">单IP模式</td><td style="padding:8px;">手动指定外部代理 + 从池中固定一个</td></tr>
+    <tr><td style="padding:8px; color:#e94560;">可靠性</td><td style="padding:8px;">五层防护：预检→心跳→重试→评分→池底保护</td></tr>
+    <tr><td style="padding:8px; color:#e94560;">免费代理源</td><td style="padding:8px;">10+ 源聚合，交叉验证，插件式采集器</td></tr>
+    <tr><td style="padding:8px; color:#e94560;">动态更新</td><td style="padding:8px;">定时刷新 + 阈值触发 + 紧急补充</td></tr>
+    <tr><td style="padding:8px; color:#e94560;">Tor 集成</td><td style="padding:8px;">匿名转发层，可插入链路任意位置</td></tr>
+    <tr><td style="padding:8px; color:#e94560;">技术栈</td><td style="padding:8px;">asyncio / FastAPI / click / aiohttp / python-socks / HTMX / YAML</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>系统架构（最终版）</h3>
+  <div class="mockup">
+    <div class="mockup-header">架构分层</div>
+    <div class="mockup-body" style="font-family:monospace; font-size:12px; line-height:1.8;">
+      <div style="background:#1a1a2e; padding:16px; border-radius:8px;">
+
+        <div style="border:1px solid #e94560; padding:10px; border-radius:6px; margin-bottom:8px;">
+          <div style="color:#e94560; font-size:14px;">🖥️ Interface Layer</div>
+          <div style="color:#aaa;">CLI (click)  ·  Web UI (FastAPI + HTMX)  ·  REST API</div>
+        </div>
+
+        <div style="border:1px solid #f77f00; padding:10px; border-radius:6px; margin-bottom:8px;">
+          <div style="color:#f77f00; font-size:14px;">🧠 Core Engine</div>
+          <div style="color:#aaa;">
+            ProxyManager — 代理服务生命周期<br>
+            RelayChain — 链路编排（free → tor → target）<br>
+            IPRotator — IP 轮换策略（round-robin / random / weighted）<br>
+            HealthMonitor — 后台健康检查<br>
+            ConfigManager — 全局配置管理
+          </div>
+        </div>
+
+        <div style="border:1px solid #533483; padding:10px; border-radius:6px; margin-bottom:8px;">
+          <div style="color:#533483; font-size:14px;">🔌 Provider Layer</div>
+          <div style="color:#aaa;">
+            FreePoolCollector — 免费代理采集验证<br>
+            PaidAdapter — 付费 API 适配器<br>
+            SelfRelayManager — 自建中继节点管理<br>
+            TorRelay — Tor 匿名层（连本地 Tor 守护进程）<br>
+            CustomProxy — 用户手动指定代理
+          </div>
+        </div>
+
+        <div style="border:1px solid #2d6a4f; padding:10px; border-radius:6px;">
+          <div style="color:#2d6a4f; font-size:14px;">🌐 Protocol Layer</div>
+          <div style="color:#aaa;">
+            HTTPServer — aiohttp HTTP 代理<br>
+            SOCKS5Server — asyncio SOCKS5 代理<br>
+            ConnectionPool — 连接复用与限流
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>目录结构</h3>
+  <pre style="background:#0d1117; color:#c9d1d9; padding:16px; border-radius:8px; font-size:13px;">
+proxy-vault/
+├── pyproject.toml
+├── config.yaml              <span style="color:#8b949e;"># 默认配置</span>
+├── src/
+│   ├── __init__.py
+│   ├── main.py              <span style="color:#8b949e;"># 入口：CLI 命令 + Web 启动</span>
+│   ├── server/
+│   │   ├── http_proxy.py    <span style="color:#8b949e;"># HTTP 代理服务</span>
+│   │   └── socks5_proxy.py  <span style="color:#8b949e;"># SOCKS5 代理服务</span>
+│   ├── core/
+│   │   ├── proxy_manager.py <span style="color:#8b949e;"># 代理管理器</span>
+│   │   ├── relay_chain.py   <span style="color:#8b949e;"># 链路编排</span>
+│   │   ├── ip_rotator.py    <span style="color:#8b949e;"># IP 轮换</span>
+│   │   └── health_monitor.py<span style="color:#8b949e;"># 健康检查</span>
+│   ├── providers/
+│   │   ├── base.py          <span style="color:#8b949e;"># 采集器基类</span>
+│   │   ├── free_pool.py     <span style="color:#8b949e;"># 免费代理池</span>
+│   │   ├── paid_adapter.py  <span style="color:#8b949e;"># 付费API适配</span>
+│   │   ├── self_relay.py    <span style="color:#8b949e;"># 自建中继</span>
+│   │   ├── tor_relay.py     <span style="color:#8b949e;"># Tor 匿名层</span>
+│   │   └── collectors/      <span style="color:#8b949e;"># 免费源采集器</span>
+│   ├── webui/
+│   │   ├── app.py           <span style="color:#8b949e;"># FastAPI 应用</span>
+│   │   ├── api.py           <span style="color:#8b949e;"># REST API 端点</span>
+│   │   └── templates/       <span style="color:#8b949e;"># HTMX 模板</span>
+│   └── cli/
+│       └── commands.py      <span style="color:#8b949e;"># Click 命令</span>
+└── tests/
+  </pre>
+</div>
+
+<div class="section">
+  <h3>CLI 命令设计</h3>
+  <pre style="background:#0d1117; color:#c9d1d9; padding:16px; border-radius:8px; font-size:13px;">
+<span style="color:#d2a8ff;">proxy start</span>    <span style="color:#8b949e;"># 启动代理服务（默认：免费池+单跳）</span>
+<span style="color:#d2a8ff;">proxy stop</span>     <span style="color:#8b949e;"># 停止代理服务</span>
+<span style="color:#d2a8ff;">proxy status</span>   <span style="color:#8b949e;"># 查看当前状态（模式/IP数/流量）</span>
+<span style="color:#d2a8ff;">proxy switch</span>   <span style="color:#8b949e;"># 切换代理模式/更换当前IP</span>
+<span style="color:#d2a8ff;">proxy config</span>   <span style="color:#8b949e;"># 查看/修改配置</span>
+<span style="color:#d2a8ff;">proxy web</span>      <span style="color:#8b949e;"># 启动 Web 管理控制台</span>
+
+<span style="color:#8b949e;"># 启动选项</span>
+--provider   free|paid|tor|self|custom   <span style="color:#8b949e;"># 代理源</span>
+--mode       single|pool                 <span style="color:#8b949e;"># 单IP或池模式</span>
+--chain      free,tor,self               <span style="color:#8b949e;"># 自定义链路</span>
+--proxy      socks5://1.2.3.4:1080       <span style="color:#8b949e;"># 手动指定代理（single模式）</span>
+--port       1080                        <span style="color:#8b949e;"># 本地监听端口</span>
+--api-key    xxx                         <span style="color:#8b949e;"># 付费代理API密钥</span>
+  </pre>
+</div>

@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude --version)",
+      "Bash(where.exe claude *)",
+      "Bash(/c/Users/stalker/AppData/Roaming/npm/claude doctor *)",
+      "Bash(npm list *)",
+      "Bash(python3 *)",
+      "Bash(cmd.exe *)",
+      "Bash(PATH=\"/c/Users/stalker/AppData/Roaming/npm:$PATH\" claude plugins *)",
+      "Bash(PATH=\"/c/Users/stalker/AppData/Roaming/npm:$PATH\" claude *)",
+      "Bash(bash *)",
+      "Bash(git init *)",
+      "Bash(pip install *)",
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git commit *)",
+      "Bash(git diff-tree *)",
+      "Bash(python *)",
+      "Bash(pytest *)"
+    ]
+  }
+}

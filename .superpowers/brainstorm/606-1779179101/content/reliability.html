@@ -1,0 +1,90 @@
+<h2>免费代理池 — 可靠性保障策略</h2>
+<p class="subtitle">五层防护机制确保代理转发不掉链</p>
+
+<div class="section">
+  <h3>分层防护流程</h3>
+  <div class="mockup">
+    <div class="mockup-header">从代理获取到请求完成的全链路保障</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 2; padding: 12px;">
+      <div style="background:#1a1a2e; padding:16px; border-radius:8px;">
+
+        <div style="color:#e94560;">▶ 第1层：入库前验证（Pre-flight Check）</div>
+        <div style="color:#aaa; margin-left:20px; margin-bottom:12px;">
+          新代理加入池子前必须通过可达性测试<br>
+          → 向 httpbin.org/ip 发请求，5秒超时，失败直接丢弃
+        </div>
+
+        <div style="color:#f77f00;">▶ 第2层：周期性健康检查（Health Monitor）</div>
+        <div style="color:#aaa; margin-left:20px; margin-bottom:12px;">
+          后台协程每 60 秒对所有池内代理进行存活性探测<br>
+          → 连续 3 次失败的代理自动剔除，恢复后重新加入
+        </div>
+
+        <div style="color:#fcbf49;">▶ 第3层：请求级超时 + 自动重试（Request Retry）</div>
+        <div style="color:#aaa; margin-left:20px; margin-bottom:12px;">
+          单次代理请求超时（默认 10s），立即标记失败<br>
+          → 自动从池中选取下一个代理重试，最多 3 次<br>
+          → 对上游扫描工具透明，它只看到一次成功的连接
+        </div>
+
+        <div style="color:#2d6a4f;">▶ 第4层：智能评分与加权（Quality Scoring）</div>
+        <div style="color:#aaa; margin-left:20px; margin-bottom:12px;">
+          每个代理维护分数（0-100），基于：响应延迟 + 成功率 + 连续失败次数<br>
+          → 分数高的代理被选中的概率更大<br>
+          → 新代理从 50 分起步，逐步验证或淘汰
+        </div>
+
+        <div style="color:#0077b6;">▶ 第5层：池底保护（Floor Protection）</div>
+        <div style="color:#aaa; margin-left:20px;">
+          当可用代理数低于阈值（默认 5 个），触发紧急补充<br>
+          → 自动重新爬取 + 降低准入标准（超时放宽到 8s）<br>
+          → 池子完全枯竭时，降级为直连模式并告警
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>生命周期状态机</h3>
+  <div class="mockup">
+    <div class="mockup-header">代理 IP 在池子中的状态流转</div>
+    <div class="mockup-body" style="text-align:center; padding:20px;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; font-size:13px;">
+        <div style="background:#555; color:white; padding:8px 14px; border-radius:6px;">UNKNOWN<br><small>新发现</small></div>
+        <span>→</span>
+        <div style="background:#f77f00; color:white; padding:8px 14px; border-radius:6px;">TESTING<br><small>验证中</small></div>
+        <span>→</span>
+        <div style="background:#2d6a4f; color:white; padding:8px 14px; border-radius:6px;">ACTIVE<br><small>可用</small></div>
+        <span style="font-size:20px;">⇄</span>
+        <div style="background:#e94560; color:white; padding:8px 14px; border-radius:6px;">UNSTABLE<br><small>连续失败</small></div>
+        <span>→</span>
+        <div style="background:#333; color:#888; padding:8px 14px; border-radius:6px;">BANNED<br><small>已剔除</small></div>
+      </div>
+      <p style="margin-top:16px; color:#aaa; font-size:12px;">
+        ACTIVE ← UNSTABLE：连续成功 2 次则恢复<br>
+        UNSTABLE → BANNED：连续失败 5 次则剔除<br>
+        BANNED → TESTING：冷却 30 分钟后可重新验证
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>关键指标</h3>
+  <table style="width:100%; border-collapse:collapse;">
+    <tr style="background:#1a1a2e; color:white;">
+      <th style="padding:8px; text-align:left;">参数</th>
+      <th style="padding:8px; text-align:left;">默认值</th>
+      <th style="padding:8px; text-align:left;">说明</th>
+    </tr>
+    <tr><td style="padding:8px;">健康检查间隔</td><td style="padding:8px;">60s</td><td style="padding:8px;">后台探测频率</td></tr>
+    <tr><td style="padding:8px;">代理请求超时</td><td style="padding:8px;">10s</td><td style="padding:8px;">单次转发超时</td></tr>
+    <tr><td style="padding:8px;">自动重试次数</td><td style="padding:8px;">3</td><td style="padding:8px;">失败后换 IP 重试</td></tr>
+    <tr><td style="padding:8px;">健康阈值</td><td style="padding:8px;">连续失败 ≥ 3</td><td style="padding:8px;">标记为 UNSTABLE</td></tr>
+    <tr><td style="padding:8px;">剔除阈值</td><td style="padding:8px;">连续失败 ≥ 5</td><td style="padding:8px;">移出可用池</td></tr>
+    <tr><td style="padding:8px;">冷却时间</td><td style="padding:8px;">30min</td><td style="padding:8px;">剔除后重新验证间隔</td></tr>
+    <tr><td style="padding:8px;">池底阈值</td><td style="padding:8px;">≤ 5 个</td><td style="padding:8px;">触发紧急补充</td></tr>
+  </table>
+</div>
