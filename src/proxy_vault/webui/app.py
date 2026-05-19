@@ -4,9 +4,13 @@ from pathlib import Path
 from proxy_vault.webui.api import api_router, get_manager
 
 templates_dir = Path(__file__).parent / "templates"
-app = FastAPI(title="Proxy Vault", version="0.1.0")
+app = FastAPI(title="NullTrace", version="0.1.0")
 templates = Jinja2Templates(directory=str(templates_dir))
 app.include_router(api_router)
+
+
+def _is_htmx(request: Request) -> bool:
+    return request.headers.get("HX-Request") == "true"
 
 
 @app.get("/")
@@ -17,17 +21,23 @@ async def index(request: Request):
 @app.get("/dashboard")
 async def dashboard(request: Request):
     stats = get_manager().get_stats()
+    if not _is_htmx(request):
+        return templates.TemplateResponse(request=request, name="index.html")
     return templates.TemplateResponse(request=request, name="dashboard.html", context=stats)
 
 
 @app.get("/controls")
 async def controls(request: Request):
     state = get_manager().state
+    if not _is_htmx(request):
+        return templates.TemplateResponse(request=request, name="index.html")
     return templates.TemplateResponse(request=request, name="controls.html", context={"state": state})
 
 
 @app.get("/config")
 async def config_page(request: Request):
+    if not _is_htmx(request):
+        return templates.TemplateResponse(request=request, name="index.html")
     from proxy_vault.config import config as cfg
     return templates.TemplateResponse(request=request, name="config.html", context={"config": cfg.data})
 
