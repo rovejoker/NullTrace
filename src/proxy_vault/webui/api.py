@@ -49,31 +49,25 @@ async def api_start(
         chain=chain, proxy_url=proxy_url,
         port=port, api_key=api_key,
     )
-    return Response(
-        content="<span class='tag tag-active'>Started</span>",
-        headers={"HX-Refresh": "true"},
-    )
+    return f'<span class="tag tag-active">RUNNING ({provider})</span>'
 
 
 @api_router.post("/stop")
 async def api_stop():
     await get_manager().stop()
-    return Response(
-        content="<span class='tag'>Stopped</span>",
-        headers={"HX-Refresh": "true"},
-    )
+    return '<span class="tag">STOPPED</span>'
 
 
 @api_router.post("/switch")
 async def api_switch(mode: str = "pool"):
     get_manager().switch_mode(mode)
-    return {"status": "switched", "mode": mode}
+    return f'<span class="tag tag-active">Mode: {mode}</span>'
 
 
 @api_router.post("/rotate")
 async def api_rotate():
     get_manager().rotate_ip()
-    return {"status": "rotated"}
+    return '<span class="tag tag-active">IP rotated</span>'
 
 
 @api_router.get("/proxies")

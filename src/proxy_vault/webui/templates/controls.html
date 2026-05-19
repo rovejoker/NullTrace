@@ -1,17 +1,22 @@
 <h2>Proxy Controls</h2>
+
+<div id="ctl-status" hx-get="/api/status" hx-trigger="every 5s" style="margin-bottom:15px;">
+    <span class="tag">STOPPED</span>
+</div>
+
 <div class="card">
     <h3 style="margin-bottom:12px;">Service Control</h3>
     <div class="flex-row">
-        <button class="btn btn-primary" hx-post="/api/start" hx-vals='{"provider":"free","mode":"pool"}'>Start Free Pool</button>
-        <button class="btn btn-primary" hx-post="/api/start" hx-vals='{"provider":"tor","mode":"single"}'>Start Tor</button>
-        <button class="btn btn-danger" hx-post="/api/stop">Stop</button>
+        <button class="btn btn-primary" hx-post="/api/start" hx-vals='{"provider":"free","mode":"pool"}' hx-target="#ctl-status">Start Free Pool</button>
+        <button class="btn btn-primary" hx-post="/api/start" hx-vals='{"provider":"tor","mode":"single"}' hx-target="#ctl-status">Start Tor</button>
+        <button class="btn btn-danger" hx-post="/api/stop" hx-target="#ctl-status">Stop</button>
     </div>
 </div>
 <div class="card">
     <h3 style="margin-bottom:12px;">Quick Actions</h3>
     <div class="flex-row">
-        <button class="btn" hx-post="/api/switch?mode=pool">Switch to Pool Mode</button>
-        <button class="btn" hx-post="/api/switch?mode=single">Switch to Single Mode</button>
-        <button class="btn" hx-post="/api/rotate">Rotate IP</button>
+        <button class="btn" hx-post="/api/switch?mode=pool" hx-target="#ctl-status">Switch to Pool Mode</button>
+        <button class="btn" hx-post="/api/switch?mode=single" hx-target="#ctl-status">Switch to Single Mode</button>
+        <button class="btn" hx-post="/api/rotate" hx-target="#ctl-status">Rotate IP</button>
     </div>
 </div>
