@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Form
 from pydantic import BaseModel
 from proxy_vault.core.proxy_manager import ProxyManager
 from proxy_vault.config import config
@@ -9,15 +9,6 @@ api_router = APIRouter(prefix="/api")
 
 def get_manager() -> ProxyManager:
     return _manager
-
-
-class StartRequest(BaseModel):
-    provider: str = "free"
-    mode: str = "pool"
-    chain: str = ""
-    proxy_url: str = ""
-    port: int = 0
-    api_key: str = ""
 
 
 class ConfigSetRequest(BaseModel):
@@ -31,11 +22,18 @@ async def get_status():
 
 
 @api_router.post("/start")
-async def api_start(req: StartRequest):
+async def api_start(
+    provider: str = Form("free"),
+    mode: str = Form("pool"),
+    chain: str = Form(""),
+    proxy_url: str = Form(""),
+    port: int = Form(0),
+    api_key: str = Form(""),
+):
     await get_manager().start(
-        provider=req.provider, mode=req.mode,
-        chain=req.chain, proxy_url=req.proxy_url,
-        port=req.port, api_key=req.api_key,
+        provider=provider, mode=mode,
+        chain=chain, proxy_url=proxy_url,
+        port=port, api_key=api_key,
     )
     return {"status": "started"}
 
