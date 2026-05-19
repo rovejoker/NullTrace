@@ -1,0 +1,39 @@
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from pathlib import Path
+from proxy_vault.webui.api import api_router, get_manager
+
+templates_dir = Path(__file__).parent / "templates"
+app = FastAPI(title="Proxy Vault", version="0.1.0")
+templates = Jinja2Templates(directory=str(templates_dir))
+app.include_router(api_router)
+
+
+@app.get("/")
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/dashboard")
+async def dashboard(request: Request):
+    stats = get_manager().get_stats()
+    return templates.TemplateResponse("dashboard.html", {"request": request, **stats})
+
+
+@app.get("/controls")
+async def controls(request: Request):
+    state = get_manager().state
+    return templates.TemplateResponse("controls.html", {"request": request, "state": state})
+
+
+@app.get("/config")
+async def config_page(request: Request):
+    from proxy_vault.config import config as cfg
+    return templates.TemplateResponse("config.html", {"request": request, "config": cfg.data})
+
+
+async def start_webui(port: int = 8080):
+    import uvicorn
+    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()

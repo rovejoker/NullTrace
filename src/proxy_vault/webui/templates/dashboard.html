@@ -1,0 +1,19 @@
+<h2>Dashboard</h2>
+<div class="stat-grid">
+    <div class="stat"><div class="stat-value">{{ 'ON' if running else 'OFF' }}</div><div class="stat-label">Status</div></div>
+    <div class="stat"><div class="stat-value">{{ provider or '-' }}</div><div class="stat-label">Provider</div></div>
+    <div class="stat"><div class="stat-value">{{ mode or '-' }}</div><div class="stat-label">Mode</div></div>
+    <div class="stat"><div class="stat-value">{{ total or 0 }}</div><div class="stat-label">Pool Size</div></div>
+    <div class="stat"><div class="stat-value">{{ active or 0 }}</div><div class="stat-label">Active</div></div>
+    <div class="stat"><div class="stat-value">{{ avg_score or 0 }}</div><div class="stat-label">Avg Score</div></div>
+    <div class="stat"><div class="stat-value">{{ uptime_seconds or 0 }}s</div><div class="stat-label">Uptime</div></div>
+</div>
+<div class="card" style="margin-top:20px;">
+    <h3 style="margin-bottom:12px;">Proxy Pool</h3>
+    <table>
+        <thead><tr><th>Host</th><th>Port</th><th>Score</th><th>Latency</th><th>Status</th></tr></thead>
+        <tbody hx-get="/api/proxies" hx-trigger="every 10s" hx-swap="innerHTML">
+            <tr><td colspan="5" style="text-align:center;color:#8b949e;">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>

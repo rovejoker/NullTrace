@@ -1,0 +1,12 @@
+<h2>Configuration</h2>
+<div class="card">
+    <h3 style="margin-bottom:12px;">Current Settings</h3>
+    <table>
+        <tr><th>Key</th><th>Value</th></tr>
+        <tr><td>proxy.host</td><td>{{ config.proxy.host if config and config.proxy else '-' }}</td></tr>
+        <tr><td>proxy.port</td><td>{{ config.proxy.port if config and config.proxy else '-' }}</td></tr>
+        <tr><td>webui.port</td><td>{{ config.webui.port if config and config.webui else '-' }}</td></tr>
+        <tr><td>tor.host</td><td>{{ config.tor.host if config and config.tor else '-' }}</td></tr>
+        <tr><td>tor.port</td><td>{{ config.tor.port if config and config.tor else '-' }}</td></tr>
+    </table>
+</div>
