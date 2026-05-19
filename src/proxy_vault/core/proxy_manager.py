@@ -1,5 +1,6 @@
 import asyncio
 import time
+import logging
 from datetime import datetime
 from proxy_vault.models import ProxyState, ProxyEntry, ChainNode, ProxyStatus
 from proxy_vault.core.relay_chain import RelayChain
@@ -11,6 +12,8 @@ from proxy_vault.providers.custom_proxy import CustomProxyProvider
 from proxy_vault.providers.paid_adapter import PaidAdapterProvider
 from proxy_vault.providers.collectors import ALL_COLLECTORS
 from proxy_vault.config import config
+
+logger = logging.getLogger("proxy-vault")
 
 
 class ProxyManager:
@@ -25,6 +28,9 @@ class ProxyManager:
         self._custom_provider: CustomProxyProvider | None = None
         self._tor_provider = TorRelayProvider()
         self._paid_provider = PaidAdapterProvider()
+        self._collector_errors: dict[str, str] = {}
+        self._collector_last_run: dict[str, float] = {}
+        self._total_collected: int = 0
 
     @property
     def state(self) -> ProxyState:
@@ -66,15 +72,20 @@ class ProxyManager:
         while self._state.running:
             try:
                 proxies = await collector.collect()
+                logger.info(f"Collector {collector.name}: got {len(proxies)} proxies")
+                self._collector_last_run[collector.name] = time.time()
+                self._collector_errors.pop(collector.name, None)
                 for p in proxies:
                     is_new = self._pool.add(p)
                     if is_new:
+                        self._total_collected += 1
                         asyncio.create_task(self._validate_and_activate(p))
                 min_size = config.get("free_pool.min_pool_size", 10)
                 if self._pool.size < min_size:
                     await self._emergency_collect()
-            except Exception:
-                pass
+            except Exception as e:
+                self._collector_errors[collector.name] = str(e)[:200]
+                logger.warning(f"Collector {collector.name} failed: {e}")
             await asyncio.sleep(collector.interval)
 
     async def _validate_and_activate(self, proxy: ProxyEntry) -> None:
@@ -149,4 +160,7 @@ class ProxyManager:
             "running": self._state.running,
             "provider": self._state.provider,
             "mode": self._state.mode,
+            "collector_errors": dict(self._collector_errors),
+            "collector_last_run": dict(self._collector_last_run),
+            "total_collected": self._total_collected,
         }

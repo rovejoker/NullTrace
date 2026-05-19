@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, Response
 from pydantic import BaseModel
 from proxy_vault.core.proxy_manager import ProxyManager
 from proxy_vault.config import config
@@ -18,7 +18,21 @@ class ConfigSetRequest(BaseModel):
 
 @api_router.get("/status")
 async def get_status():
-    return get_manager().get_stats()
+    s = get_manager().get_stats()
+    errors = s.get("collector_errors", {})
+    last_run = s.get("collector_last_run", {})
+    html = ""
+    if s["running"]:
+        html += '<span class="tag tag-active">RUNNING</span> '
+        html += f'{s.get("total_collected", 0)} collected, pool: {s.get("total", 0)}'
+        if errors:
+            html += '<div style="margin-top:8px;font-size:12px;color:#f85149;">'
+            for name, err in list(errors.items())[:3]:
+                html += f'<div>❌ {name}: {err[:100]}</div>'
+            html += '</div>'
+    else:
+        html += '<span class="tag">STOPPED</span>'
+    return html
 
 
 @api_router.post("/start")
@@ -35,13 +49,19 @@ async def api_start(
         chain=chain, proxy_url=proxy_url,
         port=port, api_key=api_key,
     )
-    return {"status": "started"}
+    return Response(
+        content="<span class='tag tag-active'>Started</span>",
+        headers={"HX-Refresh": "true"},
+    )
 
 
 @api_router.post("/stop")
 async def api_stop():
     await get_manager().stop()
-    return {"status": "stopped"}
+    return Response(
+        content="<span class='tag'>Stopped</span>",
+        headers={"HX-Refresh": "true"},
+    )
 
 
 @api_router.post("/switch")

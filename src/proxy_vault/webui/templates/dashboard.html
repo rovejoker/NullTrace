@@ -1,6 +1,9 @@
 <h2>Dashboard</h2>
 <div class="stat-grid">
-    <div class="stat"><div class="stat-value">{{ 'ON' if running else 'OFF' }}</div><div class="stat-label">Status</div></div>
+    <div class="stat">
+        <div class="stat-value" hx-get="/api/status" hx-trigger="every 5s">{{ 'ON' if running else 'OFF' }}</div>
+        <div class="stat-label">Status</div>
+    </div>
     <div class="stat"><div class="stat-value">{{ provider or '-' }}</div><div class="stat-label">Provider</div></div>
     <div class="stat"><div class="stat-value">{{ mode or '-' }}</div><div class="stat-label">Mode</div></div>
     <div class="stat"><div class="stat-value">{{ total or 0 }}</div><div class="stat-label">Pool Size</div></div>
@@ -8,6 +11,28 @@
     <div class="stat"><div class="stat-value">{{ avg_score or 0 }}</div><div class="stat-label">Avg Score</div></div>
     <div class="stat"><div class="stat-value">{{ uptime_seconds or 0 }}s</div><div class="stat-label">Uptime</div></div>
 </div>
+
+{% if collector_errors %}
+<div class="card" style="border-color:#f85149;margin-top:20px;">
+    <h3 style="color:#f85149;margin-bottom:12px;">Collector Errors</h3>
+    <table>
+        <tr><th>Source</th><th>Error</th></tr>
+        {% for name, err in collector_errors.items() %}
+        <tr><td>{{ name }}</td><td style="color:#f85149;">{{ err }}</td></tr>
+        {% endfor %}
+    </table>
+    <p style="color:#8b949e;font-size:12px;margin-top:8px;">
+        All 8 proxy sources may be inaccessible from your network. Try using Tor or a custom proxy.
+    </p>
+</div>
+{% endif %}
+
+{% if running and total == 0 and not collector_errors %}
+<div class="card" style="margin-top:20px;">
+    <p style="color:#d29922;">Collectors are running, waiting for proxy sources to respond...</p>
+</div>
+{% endif %}
+
 <div class="card" style="margin-top:20px;">
     <h3 style="margin-bottom:12px;">Proxy Pool</h3>
     <table>
