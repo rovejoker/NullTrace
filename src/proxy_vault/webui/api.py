@@ -1,10 +1,15 @@
+import asyncio
 from fastapi import APIRouter, Form
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from proxy_vault.core.proxy_manager import ProxyManager
+from proxy_vault.server.http_proxy import HTTPProxyServer
+from proxy_vault.server.socks5_proxy import SOCKS5Server
 from proxy_vault.config import config
 
 _manager = ProxyManager()
+_http_server: HTTPProxyServer | None = None
+_socks_server: SOCKS5Server | None = None
 api_router = APIRouter(prefix="/api")
 
 
@@ -21,15 +26,16 @@ class ConfigSetRequest(BaseModel):
 async def get_status():
     s = get_manager().get_stats()
     errors = s.get("collector_errors", {})
-    last_run = s.get("collector_last_run", {})
+    host = config.get("proxy.host", "127.0.0.1")
+    port = config.get("proxy.port", 1080)
     html = ""
     if s["running"]:
-        html += '<span class="tag tag-active">RUNNING</span> '
-        html += f'{s.get("total_collected", 0)} collected, pool: {s.get("total", 0)}'
+        html += f'<span class="tag tag-active">RUNNING</span> '
+        html += f'Proxy: {host}:{port} | pool: {s.get("total", 0)}, active: {s.get("active", 0)}'
         if errors:
-            html += '<div style="margin-top:8px;font-size:12px;color:#f85149;">'
-            for name, err in list(errors.items())[:3]:
-                html += f'<div>❌ {name}: {err[:100]}</div>'
+            html += '<div style="margin-top:6px;font-size:12px;color:#f85149;">'
+            for name, err in list(errors.items())[:2]:
+                html += f'<div>{name}: {err[:80]}</div>'
             html += '</div>'
     else:
         html += '<span class="tag">STOPPED</span>'
@@ -45,16 +51,37 @@ async def api_start(
     port: int = Form(0),
     api_key: str = Form(""),
 ):
+    global _http_server, _socks_server
+    # Stop existing servers if running
+    if _http_server:
+        await _http_server.stop()
+    if _socks_server:
+        await _socks_server.stop()
+
     await get_manager().start(
         provider=provider, mode=mode,
         chain=chain, proxy_url=proxy_url,
         port=port, api_key=api_key,
     )
-    return f'<span class="tag tag-active">RUNNING ({provider})</span>'
+
+    # Start HTTP + SOCKS5 proxy servers
+    host = config.get("proxy.host", "127.0.0.1")
+    listen_port = port or config.get("proxy.port", 1080)
+    _http_server = HTTPProxyServer(get_manager())
+    _socks_server = SOCKS5Server(get_manager(), host=host, port=listen_port)
+    asyncio.create_task(_http_server.start())
+    asyncio.create_task(_socks_server.start())
+
+    return f'<span class="tag tag-active">RUNNING ({provider}) :{listen_port}</span>'
 
 
 @api_router.post("/stop")
 async def api_stop():
+    global _http_server, _socks_server
+    if _http_server:
+        await _http_server.stop()
+    if _socks_server:
+        await _socks_server.stop()
     await get_manager().stop()
     return '<span class="tag">STOPPED</span>'
 

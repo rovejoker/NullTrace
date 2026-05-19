@@ -27,9 +27,10 @@ class HealthMonitor:
         proxies = list(self._pool._proxies.values())
         if not proxies:
             return
-        # Only check up to 200 proxies per cycle, prioritize unchecked ones
-        to_check = [p for p in proxies if p.latency_ms == 0][:50] or proxies[:50]
-        semaphore = asyncio.Semaphore(20)
+        # Prioritize unchecked, then check up to 100 per cycle
+        unchecked = [p for p in proxies if p.latency_ms == 0]
+        to_check = unchecked[:100] if unchecked else proxies[:100]
+        semaphore = asyncio.Semaphore(30)
         async def check_one(p: ProxyEntry):
             async with semaphore:
                 t0 = time.monotonic()
