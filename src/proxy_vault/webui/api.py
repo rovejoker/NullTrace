@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Form, Response
+from fastapi import APIRouter, Form
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from proxy_vault.core.proxy_manager import ProxyManager
 from proxy_vault.config import config
@@ -86,7 +87,7 @@ async def api_proxies():
         rows += f'<tr><td>{p["host"]}</td><td>{p["port"]}</td><td>{p["score"]}</td><td>{p["latency"]}ms</td><td><span class="tag {tag_class}">{p["status"]}</span></td></tr>'
     if not result:
         rows = '<tr><td colspan="5" style="text-align:center;color:#8b949e;">No proxies available</td></tr>'
-    return rows
+    return HTMLResponse(content=rows)
 
 
 @api_router.get("/config")

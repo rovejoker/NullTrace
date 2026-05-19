@@ -37,7 +37,7 @@
     <h3 style="margin-bottom:12px;">Proxy Pool</h3>
     <table>
         <thead><tr><th>Host</th><th>Port</th><th>Score</th><th>Latency</th><th>Status</th></tr></thead>
-        <tbody hx-get="/api/proxies" hx-trigger="every 10s" hx-swap="innerHTML">
+        <tbody hx-get="/api/proxies" hx-trigger="load, every 10s" hx-swap="innerHTML">
             <tr><td colspan="5" style="text-align:center;color:#8b949e;">Loading...</td></tr>
         </tbody>
     </table>
